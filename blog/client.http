@@ -1,4 +1,48 @@
 @baseUrl = http://localhost:3000
 
 # @name root
-GET http://localhost:3000 HTTP/1.1
+GET {{baseUrl}} HTTP/1.1
+
+### 
+# @name categories
+GET {{baseUrl}}/api/categories HTTP/1.1
+
+### 
+# @name category
+GET {{baseUrl}}/api/categories/1 HTTP/1.1
+
+### 
+# @name category_invalid_param
+GET {{baseUrl}}/api/categories/1a HTTP/1.1
+
+###
+# @name create_category
+POST {{baseUrl}}/api/categories HTTP/1.1
+content-type: application/json
+
+{
+    "name": "some name"
+}
+
+###
+# @name posts
+GET {{baseUrl}}/api/posts HTTP/1.1
+
+###
+# @name posts_slug
+GET {{baseUrl}}/api/posts?slug=lorem-ipsum HTTP/1.1
+
+###
+# @name post
+GET {{baseUrl}}/api/posts/1 HTTP/1.1
+
+
+###
+# @name create_post
+POST {{baseUrl}}/api/posts HTTP/1.1
+content-type: application/json
+
+{
+    "title": "Lorem Ipsum",
+    "content": "Praesent sodales arcu lectus, sit amet faucibus sapien gravida non. Donec bibendum egestas felis eu ultricies. Quisque diam leo, sagittis vitae fermentum ullamcorper, dictum in nisl. Vivamus ornare nisi a est bibendum, eget vehicula ex finibus. Morbi tincidunt nibh id vestibulum porttitor. Nullam aliquet, ligula vitae aliquam ullamcorper, dui nibh aliquam nisl, vitae laoreet risus nisl id felis. Curabitur sed nibh ultricies, molestie neque vel, ullamcorper velit. Vestibulum feugiat ultrices porttitor. Donec quis egestas ante. Nullam et diam sed nisi faucibus placerat. Donec rutrum fermentum metus, sed posuere sapien pretium sit amet. Curabitur ac orci nibh. Duis mi felis, auctor at enim sed, viverra dignissim ex. Donec posuere dolor nec massa faucibus, quis maximus leo posuere."
+}

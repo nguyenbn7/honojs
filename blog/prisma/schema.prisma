@@ -1,0 +1,43 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator kysely {
+  provider = "prisma-kysely"
+
+  output   = "../src/db"
+  fileName = "types.d.ts"
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamp()
+  published Boolean  @default(false) @map("published")
+  slug      String   @db.VarChar(255)
+  content   String   @db.Text
+
+  @@index([title, slug])
+  @@map("post")
+}
+
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String @db.VarChar(255)
+
+  description String? @db.Text
+
+  @@map("category")
+}

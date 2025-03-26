@@ -1,12 +1,32 @@
 {
   "name": "blog",
   "scripts": {
-    "dev": "bun run --hot src/app.ts"
+    "dev": "bun run --hot src/app.ts",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "db:seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "hono": "^4.7.5"
+    "@hono/zod-validator": "^0.4.3",
+    "@types/lodash": "^4.17.16",
+    "@types/node": "^22.13.13",
+    "hono": "^4.7.5",
+    "kysely": "^0.27.6",
+    "lodash": "^4.17.21",
+    "pg": "^8.14.1",
+    "prisma": "^6.5.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@prisma/client": "^6.5.0",
+    "@types/bun": "latest",
+    "@types/pg": "^8.11.11",
+    "prisma-kysely": "^1.8.0"
   }
 }
