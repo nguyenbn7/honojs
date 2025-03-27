@@ -1,4 +1,4 @@
-import type { DB as Database } from "./types.d";
+import type { DB as Database } from "./types";
 
 import { Pool } from "pg";
 import { Kysely, PostgresDialect } from "kysely";
