@@ -43,6 +43,6 @@ POST {{baseUrl}}/api/posts HTTP/1.1
 content-type: application/json
 
 {
-    "title": "Lorem Ipsum",
+    "title": "Tiêu đề bằng tiếng Việt",
     "content": "Praesent sodales arcu lectus, sit amet faucibus sapien gravida non. Donec bibendum egestas felis eu ultricies. Quisque diam leo, sagittis vitae fermentum ullamcorper, dictum in nisl. Vivamus ornare nisi a est bibendum, eget vehicula ex finibus. Morbi tincidunt nibh id vestibulum porttitor. Nullam aliquet, ligula vitae aliquam ullamcorper, dui nibh aliquam nisl, vitae laoreet risus nisl id felis. Curabitur sed nibh ultricies, molestie neque vel, ullamcorper velit. Vestibulum feugiat ultrices porttitor. Donec quis egestas ante. Nullam et diam sed nisi faucibus placerat. Donec rutrum fermentum metus, sed posuere sapien pretium sit amet. Curabitur ac orci nibh. Duis mi felis, auctor at enim sed, viverra dignissim ex. Donec posuere dolor nec massa faucibus, quis maximus leo posuere."
 }

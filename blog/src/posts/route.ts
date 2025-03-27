@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import db from "../db";
 import { zValidator } from "@hono/zod-validator";
 import { createPostSchema, postIdSchema } from "./schemas";
-import kebabCase from "lodash/kebabCase";
+import slugify from "slugify";
 
 const app = new Hono()
   .get("/", async (c) => {
@@ -27,7 +27,7 @@ const app = new Hono()
 
     const post = await db
       .selectFrom("post as p")
-      .where("p.slug", "=", kebabCase(slug))
+      .where("p.slug", "=", slugify(slug))
       .select([
         "p.id",
         "p.title",
@@ -71,7 +71,10 @@ const app = new Hono()
         title,
         content,
         published: published ?? false,
-        slug: kebabCase(title),
+        slug: slugify(title, {
+          lower: true,
+          locale: "vi",
+        }),
       })
       .returning([
         "id",
