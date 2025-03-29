@@ -1,45 +1,94 @@
 import { Hono } from "hono";
-import db from "../db";
 import { zValidator } from "@hono/zod-validator";
-import { categoryIdSchema, createCategorySchema } from "./schemas";
+import { StatusCodes } from "http-status-codes";
+import { ErrorCodes, Status } from "../lib/constants";
+import { numberSchema } from "../lib/schemas";
+import { createCategorySchema } from "./schemas";
+import {
+  createCategory,
+  getCategories,
+  getCategoryById,
+  getCategoryByName,
+} from "./service";
 
 const app = new Hono()
   .get("/", async (c) => {
-    const categories = await db
-      .selectFrom("category as c")
-      .selectAll()
-      .execute();
+    const categories = await getCategories();
 
-    return c.json({ data: categories });
+    return c.json({
+      status: Status.SUCCESS,
+      data: { categories },
+    });
   })
-  .get("/:id", zValidator("param", categoryIdSchema), async (c) => {
-    const { id } = c.req.valid("param");
+  .get("/:slug", async (c) => {
+    const { slug } = c.req.param();
 
-    const category = await db
-      .selectFrom("category as c")
-      .where("c.id", "=", id)
-      .selectAll()
-      .executeTakeFirst();
+    let category: AsyncReturnType<typeof getCategoryById> = undefined;
 
-    if (!category) return c.json({ message: "Not found" }, 404);
+    const result = numberSchema.safeParse(slug);
 
-    return c.json({ data: category });
+    if (result.success) {
+      const id = result.data;
+      category = await getCategoryById(id);
+    } else {
+      category = await getCategoryByName(slug);
+    }
+
+    if (!category)
+      return c.json(
+        {
+          status: Status.ERROR,
+          error: {
+            code: ErrorCodes.NOT_FOUND,
+            message: "Category Not Found",
+          },
+        },
+        StatusCodes.NOT_FOUND
+      );
+
+    return c.json({
+      status: Status.SUCCESS,
+      data: { category },
+    });
   })
   .post("/", zValidator("json", createCategorySchema), async (c) => {
     const { name, description } = c.req.valid("json");
 
-    const newCategory = await db
-      .insertInto("category")
-      .values({
-        name,
-        description: description ?? null,
-      })
-      .returningAll()
-      .executeTakeFirst();
+    const existsCategory = await getCategoryByName(name);
 
-    if (!newCategory) return c.json({ error: "Cannot create category" }, 400);
+    if (existsCategory)
+      return c.json(
+        {
+          status: Status.ERROR,
+          error: {
+            code: ErrorCodes.CONFLICT,
+            message: "Category existed",
+          },
+        },
+        StatusCodes.CONFLICT
+      );
 
-    return c.json({ data: newCategory });
+    const category = await createCategory({
+      name,
+      description: description ?? null,
+    });
+
+    if (!category)
+      return c.json(
+        {
+          status: Status.ERROR,
+          error: {
+            code: ErrorCodes.CONFLICT,
+            message: "Cannot create category",
+          },
+        },
+        StatusCodes.CONFLICT
+      );
+
+    return c.json({
+      status: Status.SUCCESS,
+      data: { category },
+    });
   });
 
 export default app;

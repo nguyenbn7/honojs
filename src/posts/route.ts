@@ -1,112 +1,104 @@
 import { Hono } from "hono";
-import db from "../db";
 import { zValidator } from "@hono/zod-validator";
-import { createPostSchema, postIdSchema } from "./schemas";
-import slugify from "slugify";
-import { createPost, getPost, getPosts } from "./service";
-import { STATUS_ERROR, STATUS_FAIL, STATUS_SUCCESS } from "../lib/constants";
+import { StatusCodes } from "http-status-codes";
+import { ErrorCodes, Status } from "../lib/constants";
+import { numberSchema } from "../lib/schemas";
+import { createPostSchema } from "./schemas";
+import { createPost, getPostById, getPostByTitle, getPosts } from "./service";
 
 const app = new Hono()
   .get("/", async (c) => {
-    const { slug } = c.req.query();
+    const posts = await getPosts();
 
-    if (!slug) {
-      const posts = await getPosts();
-
-      return c.json({ status: STATUS_SUCCESS, data: { posts } });
-    }
-
-    const post = await db
-      .selectFrom("post as p")
-      .where("p.slug", "=", slugify(slug))
-      .select([
-        "p.id",
-        "p.title",
-        "p.slug",
-        "p.created_at as createdAt",
-        "p.updated_at as updatedAt",
-        "p.published",
-        "p.content",
-      ])
-      .execute();
-
-    return c.json({ status: STATUS_SUCCESS, data: post });
+    return c.json({
+      status: Status.SUCCESS,
+      data: { posts },
+    });
   })
-  .get(
-    "/:id",
-    zValidator("param", postIdSchema, (result, c) => {
-      if (!result.success)
-        return c.json(
-          {
-            status: STATUS_FAIL,
-            data: {
-              message: "Invalid id",
-            },
-          },
-          400
-        );
-    }),
-    async (c) => {
-      const { id } = c.req.valid("param");
+  .get("/:slug", async (c) => {
+    const { slug } = c.req.param();
 
-      const post = await getPost(id);
+    let post: AsyncReturnType<typeof getPostById> = undefined;
 
-      if (!post)
-        return c.json(
-          {
-            status: STATUS_ERROR,
-            error: { code: 404, message: "Post Not Found" },
-            data: null,
-          },
-          404
-        );
+    const result = numberSchema.safeParse(slug);
 
-      return c.json({ data: post });
+    if (result.success) {
+      const id = result.data;
+      post = await getPostById(id);
+    } else {
+      post = await getPostByTitle(slug);
     }
-  )
+
+    if (!post)
+      return c.json(
+        {
+          status: Status.ERROR,
+          error: {
+            code: ErrorCodes.NOT_FOUND,
+            message: "Post Not Found",
+          },
+        },
+        StatusCodes.NOT_FOUND
+      );
+
+    return c.json({ data: post });
+  })
   .post(
     "/",
     zValidator("json", createPostSchema, (result, c) => {
       if (!result.success)
         return c.json(
           {
-            status: STATUS_FAIL,
-            data: {
-              validation: result.error.errors.map((e) => ({
+            status: Status.FAIL,
+            error: {
+              code: ErrorCodes.VALIDATION_ERROR,
+              errors: result.error.errors.map((e) => ({
                 code: e.code,
                 message: e.message,
-                location: e.path.join("."),
+                path: e.path.join("."),
               })),
             },
           },
-          400
+          StatusCodes.BAD_REQUEST
         );
     }),
     async (c) => {
       const { title, content, published } = c.req.valid("json");
+
+      const existsPost = await getPostByTitle(title);
+
+      if (existsPost)
+        return c.json(
+          {
+            status: Status.ERROR,
+            error: {
+              code: ErrorCodes.CONFLICT,
+              message: "Post existed",
+            },
+          },
+          StatusCodes.CONFLICT
+        );
 
       const post = await createPost({ title, content, published });
 
       if (!post)
         return c.json(
           {
-            status: STATUS_ERROR,
+            status: Status.ERROR,
             error: {
+              code: ErrorCodes.CONFLICT,
               message: "Cannot create post",
             },
           },
-          409
+          StatusCodes.CONFLICT
         );
 
-      return c.json(
-        {
-          status: STATUS_SUCCESS,
-          data: {
-            post,
-          },
+      return c.json({
+        status: Status.SUCCESS,
+        data: {
+          post,
         },
-        201
-      );
+      });
     }
   );
 

@@ -20,24 +20,28 @@ generator kysely {
   fileName = "types.d.ts"
 }
 
+model Category {
+  id          Int     @id @default(autoincrement())
+  name        String  @db.VarChar(255)
+  slug        String  @unique @db.VarChar(255)
+  description String? @db.Text
+  posts       Post[]
+
+  @@index([slug, name])
+  @@map("category")
+}
+
 model Post {
-  id        Int      @id @default(autoincrement())
-  title     String   @db.VarChar(255)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp()
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamp()
-  published Boolean  @default(false) @map("published")
-  slug      String   @db.VarChar(255)
-  content   String   @db.Text
+  id         Int       @id @default(autoincrement())
+  title      String    @db.VarChar(255)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt  DateTime  @default(now()) @map("updated_at") @db.Timestamp()
+  published  Boolean   @default(false) @map("published")
+  slug       String    @unique @db.VarChar(255)
+  content    String    @db.Text
+  Category   Category? @relation(fields: [categoryId], references: [id])
+  categoryId Int?      @map("category_id")
 
   @@index([title, slug])
   @@map("post")
-}
-
-model Category {
-  id   Int    @id @default(autoincrement())
-  name String @db.VarChar(255)
-
-  description String? @db.Text
-
-  @@map("category")
 }

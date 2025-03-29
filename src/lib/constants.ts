@@ -1,3 +1,11 @@
-export const STATUS_SUCCESS = "success";
-export const STATUS_FAIL = "fail";
-export const STATUS_ERROR = "error";
+export enum Status {
+  SUCCESS = "success",
+  FAIL = "fail",
+  ERROR = "error",
+}
+
+export enum ErrorCodes {
+  NOT_FOUND = "NOT_FOUND",
+  CONFLICT = "CONFLICT",
+  VALIDATION_ERROR = "VALIDATION_ERROR",
+}

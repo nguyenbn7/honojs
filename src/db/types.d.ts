@@ -7,6 +7,7 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 export type Category = {
     id: Generated<number>;
     name: string;
+    slug: string;
     description: string | null;
 };
 export type Post = {
@@ -17,6 +18,7 @@ export type Post = {
     published: Generated<boolean>;
     slug: string;
     content: string;
+    category_id: number | null;
 };
 export type DB = {
     category: Category;

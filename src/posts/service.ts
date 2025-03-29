@@ -1,22 +1,6 @@
 import db from "../db";
 import slugify from "slugify";
-
-type SlugifyOptions = {
-  replacement?: string;
-  remove?: RegExp;
-  lower?: boolean;
-  strict?: boolean;
-  locale?: string;
-  trim?: boolean;
-};
-
-const defaultSlugifyOptions: SlugifyOptions = {
-  lower: true,
-  locale: "vi",
-  trim: true,
-};
-
-export function hasPredicates() {}
+import { defaultSlugifyOptions, type SlugifyOptions } from "../lib";
 
 export async function getPosts() {
   return db
@@ -33,10 +17,29 @@ export async function getPosts() {
     .execute();
 }
 
-export async function getPost(id: number) {
+export async function getPostById(id: number) {
   return db
     .selectFrom("post as p")
     .where("p.id", "=", id)
+    .select([
+      "p.id",
+      "p.title",
+      "p.slug",
+      "p.created_at as createdAt",
+      "p.updated_at as updatedAt",
+      "p.published",
+      "p.content",
+    ])
+    .executeTakeFirst();
+}
+
+export async function getPostByTitle(
+  slug: string,
+  slugifyOptions: SlugifyOptions = defaultSlugifyOptions
+) {
+  return db
+    .selectFrom("post as p")
+    .where("p.slug", "=", slugify(slug, slugifyOptions))
     .select([
       "p.id",
       "p.title",
@@ -59,24 +62,35 @@ export async function createPost(
   data: CreatePost,
   slugifyOptions: SlugifyOptions = defaultSlugifyOptions
 ) {
-  const { title, content, published = false } = data;
+  try {
+    const { title, content, published = false } = data;
 
-  return db
-    .insertInto("post")
-    .values({
-      title,
-      content,
-      published: published,
-      slug: slugify(title, slugifyOptions),
-    })
-    .returning([
-      "id",
-      "title",
-      "slug",
-      "created_at as createdAt",
-      "updated_at as updatedAt",
-      "published",
-      "content",
-    ])
-    .executeTakeFirst();
+    return await db
+      .transaction()
+      .setIsolationLevel("serializable")
+      .execute(async (trx) => {
+        return await trx
+          .insertInto("post")
+          .values({
+            title,
+            content,
+            published: published,
+            slug: slugify(title, slugifyOptions),
+          })
+          .returning([
+            "id",
+            "title",
+            "slug",
+            "created_at as createdAt",
+            "updated_at as updatedAt",
+            "published",
+            "content",
+          ])
+          .executeTakeFirstOrThrow();
+      });
+  } catch (error) {
+    console.log("Error at createPost():", error);
+
+    return;
+  }
 }
