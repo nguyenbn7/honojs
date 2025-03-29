@@ -20,7 +20,6 @@
         "prisma-kysely": "^1.8.0",
         "testcontainers": "^10.23.0",
         "tsx": "^4.19.3",
-        "typescript": "^5.8.2",
         "vite": "^6.2.3",
         "vitest": "^3.0.9",
       },
