@@ -1,8 +1,22 @@
 import db from "../db";
+import slugify from "slugify";
 
-export function hasPredicates() {
-    
-}
+type SlugifyOptions = {
+  replacement?: string;
+  remove?: RegExp;
+  lower?: boolean;
+  strict?: boolean;
+  locale?: string;
+  trim?: boolean;
+};
+
+const defaultSlugifyOptions: SlugifyOptions = {
+  lower: true,
+  locale: "vi",
+  trim: true,
+};
+
+export function hasPredicates() {}
 
 export async function getPosts() {
   return db
@@ -31,6 +45,38 @@ export async function getPost(id: number) {
       "p.updated_at as updatedAt",
       "p.published",
       "p.content",
+    ])
+    .executeTakeFirst();
+}
+
+type CreatePost = {
+  title: string;
+  content: string;
+  published: boolean;
+};
+
+export async function createPost(
+  data: CreatePost,
+  slugifyOptions: SlugifyOptions = defaultSlugifyOptions
+) {
+  const { title, content, published = false } = data;
+
+  return db
+    .insertInto("post")
+    .values({
+      title,
+      content,
+      published: published,
+      slug: slugify(title, slugifyOptions),
+    })
+    .returning([
+      "id",
+      "title",
+      "slug",
+      "created_at as createdAt",
+      "updated_at as updatedAt",
+      "published",
+      "content",
     ])
     .executeTakeFirst();
 }

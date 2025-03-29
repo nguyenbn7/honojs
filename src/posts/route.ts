@@ -3,26 +3,17 @@ import db from "../db";
 import { zValidator } from "@hono/zod-validator";
 import { createPostSchema, postIdSchema } from "./schemas";
 import slugify from "slugify";
+import { createPost, getPost, getPosts } from "./service";
+import { STATUS_ERROR, STATUS_FAIL, STATUS_SUCCESS } from "../lib/constants";
 
 const app = new Hono()
   .get("/", async (c) => {
     const { slug } = c.req.query();
 
     if (!slug) {
-      const posts = await db
-        .selectFrom("post as p")
-        .select([
-          "p.id",
-          "p.title",
-          "p.slug",
-          "p.created_at as createdAt",
-          "p.updated_at as updatedAt",
-          "p.published",
-          "p.content",
-        ])
-        .execute();
+      const posts = await getPosts();
 
-      return c.json({ data: posts });
+      return c.json({ status: STATUS_SUCCESS, data: { posts } });
     }
 
     const post = await db
@@ -39,57 +30,84 @@ const app = new Hono()
       ])
       .execute();
 
-    return c.json({ data: post });
+    return c.json({ status: STATUS_SUCCESS, data: post });
   })
-  .get("/:id", zValidator("param", postIdSchema), async (c) => {
-    const { id } = c.req.valid("param");
+  .get(
+    "/:id",
+    zValidator("param", postIdSchema, (result, c) => {
+      if (!result.success)
+        return c.json(
+          {
+            status: STATUS_FAIL,
+            data: {
+              message: "Invalid id",
+            },
+          },
+          400
+        );
+    }),
+    async (c) => {
+      const { id } = c.req.valid("param");
 
-    const post = await db
-      .selectFrom("post as p")
-      .where("p.id", "=", id)
-      .select([
-        "p.id",
-        "p.title",
-        "p.slug",
-        "p.created_at as createdAt",
-        "p.updated_at as updatedAt",
-        "p.published",
-        "p.content",
-      ])
-      .executeTakeFirst();
+      const post = await getPost(id);
 
-    if (!post) return c.json({ message: "Not found" }, 404);
+      if (!post)
+        return c.json(
+          {
+            status: STATUS_ERROR,
+            error: { code: 404, message: "Post Not Found" },
+            data: null,
+          },
+          404
+        );
 
-    return c.json({ data: post });
-  })
-  .post("/", zValidator("json", createPostSchema), async (c) => {
-    const { title, content, published } = c.req.valid("json");
+      return c.json({ data: post });
+    }
+  )
+  .post(
+    "/",
+    zValidator("json", createPostSchema, (result, c) => {
+      if (!result.success)
+        return c.json(
+          {
+            status: STATUS_FAIL,
+            data: {
+              validation: result.error.errors.map((e) => ({
+                code: e.code,
+                message: e.message,
+                location: e.path.join("."),
+              })),
+            },
+          },
+          400
+        );
+    }),
+    async (c) => {
+      const { title, content, published } = c.req.valid("json");
 
-    const newPost = await db
-      .insertInto("post")
-      .values({
-        title,
-        content,
-        published: published ?? false,
-        slug: slugify(title, {
-          lower: true,
-          locale: "vi",
-        }),
-      })
-      .returning([
-        "id",
-        "title",
-        "slug",
-        "created_at as createdAt",
-        "updated_at as updatedAt",
-        "published",
-        "content",
-      ])
-      .executeTakeFirst();
+      const post = await createPost({ title, content, published });
 
-    if (!newPost) return c.json({ error: "Cannot create post" }, 400);
+      if (!post)
+        return c.json(
+          {
+            status: STATUS_ERROR,
+            error: {
+              message: "Cannot create post",
+            },
+          },
+          409
+        );
 
-    return c.json({ data: newPost });
-  });
+      return c.json(
+        {
+          status: STATUS_SUCCESS,
+          data: {
+            post,
+          },
+        },
+        201
+      );
+    }
+  );
 
 export default app;

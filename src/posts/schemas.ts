@@ -5,7 +5,7 @@ export const postIdSchema = z.object({
 });
 
 export const createPostSchema = z.object({
-  title: z.string().trim().min(1, "required"),
-  content: z.string(),
+  title: z.string().trim().min(1),
+  content: z.string().min(1),
   published: z.boolean().default(false),
 });
