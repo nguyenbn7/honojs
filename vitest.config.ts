@@ -5,8 +5,8 @@ export default defineConfig({
   test: {
     passWithNoTests: true,
     globals: true,
-    include: ["./test/**/*.test.ts"],
+    include: ["./tests/**/*.test.ts"],
     env: loadEnv("testing", process.cwd(), ""),
-    globalSetup: "./test/setup.ts",
+    globalSetup: "./tests/setup.ts",
   },
 });

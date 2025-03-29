@@ -1,5 +1,4 @@
-import { test, expect } from "vitest";
-
+import { expect, test } from "vitest";
 import app from "../src/app";
 
 test("GET /", async () => {
