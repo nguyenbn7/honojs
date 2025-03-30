@@ -1,6 +1,9 @@
 {
   "name": "blog-api",
   "type": "module",
+  "description": "Inspired from https://roadmap.sh/projects/blogging-platform-api",
+  "private": true,
+  "license": "MIT",
   "scripts": {
     "dev": "bun run --hot src/app.ts",
     "test": "vitest",
